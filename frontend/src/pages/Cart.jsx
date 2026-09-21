@@ -1,0 +1,12 @@
+import { ArrowRight, Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { useCart } from "../context/CartContext";
+
+const money = (value) => `₹${Number(value).toLocaleString("en-IN")}`;
+
+export default function Cart() {
+  const { items, subtotal, setQuantity, removeFromCart } = useCart();
+  const navigate = useNavigate();
+  if (!items.length) return <div className="container empty-cart"><div className="empty-icon"><ShoppingBag /></div><div className="kicker dark">Your bag</div><h1>Nothing here yet.</h1><p>Good things take a little browsing. Find something that earns its place.</p><Link className="button button-dark" to="/">Explore the collection <ArrowRight size={17} /></Link></div>;
+  return <div className="container cart-page"><div className="page-heading"><div className="kicker dark">Your bag / {items.length} {items.length === 1 ? "item" : "items"}</div><h1>Ready when you are.</h1></div><div className="cart-layout"><div className="cart-items">{items.map((item) => <div className="cart-item" key={item.product}><img src={item.image} alt={item.name} /><div className="cart-item-copy"><span className="eyebrow">Selected piece</span><h3>{item.name}</h3><span className="cart-price">{money(item.price)}</span><div className="quantity small"><button onClick={() => setQuantity(item.product, item.quantity - 1)}><Minus size={14} /></button><span>{item.quantity}</span><button onClick={() => setQuantity(item.product, item.quantity + 1)}><Plus size={14} /></button></div></div><div className="cart-line-total">{money(item.price * item.quantity)}<button className="remove-button" onClick={() => removeFromCart(item.product)}><Trash2 size={16} /></button></div></div>)}</div><aside className="summary-card"><div className="kicker dark">Order summary</div><div className="summary-line"><span>Subtotal</span><strong>{money(subtotal)}</strong></div><div className="summary-line"><span>Delivery</span><strong>{subtotal >= 5000 ? "Free" : "₹199"}</strong></div><div className="summary-total"><span>Total</span><strong>{money(subtotal + (subtotal >= 5000 ? 0 : 199))}</strong></div><p className="summary-note">Cash on delivery available. Free delivery on orders over ₹5,000.</p><button className="button button-dark full" onClick={() => navigate("/checkout")}>Continue to checkout <ArrowRight size={17} /></button></aside></div></div>;
+}

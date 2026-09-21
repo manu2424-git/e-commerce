@@ -1,0 +1,20 @@
+import { ArrowLeft, ArrowRight, Check, LockKeyhole } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { useState } from "react";
+import api, { apiError } from "../api";
+import Alert from "../components/Alert";
+import { useCart } from "../context/CartContext";
+
+const money = (value) => `₹${Number(value).toLocaleString("en-IN")}`;
+
+export default function Checkout() {
+  const { items, subtotal, clearCart } = useCart();
+  const navigate = useNavigate();
+  const [form, setForm] = useState({ fullName: "", phone: "", address: "", city: "", state: "", pincode: "" });
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  if (!items.length) return <div className="container empty-state checkout-empty"><h2>Your bag is empty.</h2><Link className="button button-dark" to="/">Return to shop</Link></div>;
+  function change(e) { setForm({ ...form, [e.target.name]: e.target.value }); }
+  async function submit(e) { e.preventDefault(); setBusy(true); setError(""); try { await api.post("/orders", { items: items.map(({ product, quantity }) => ({ product, quantity })), shippingAddress: form, paymentMethod: "Cash on Delivery" }); clearCart(); navigate("/orders", { state: { placed: true } }); } catch (err) { setError(apiError(err)); } finally { setBusy(false); } }
+  return <div className="container checkout-page"><Link to="/cart" className="back-link"><ArrowLeft size={16} /> Back to bag</Link><div className="page-heading"><div className="kicker dark">Checkout</div><h1>Almost yours.</h1></div><div className="checkout-layout"><form className="checkout-form" onSubmit={submit}><div className="form-section"><div className="form-section-title"><span>01</span><div><h3>Delivery details</h3><p>Where should we send your order?</p></div></div><div className="form-grid"><label className="field"><span>Full name</span><input name="fullName" value={form.fullName} onChange={change} required /></label><label className="field"><span>Phone</span><input name="phone" value={form.phone} onChange={change} required pattern="[0-9+() -]{7,}" /></label><label className="field full-span"><span>Address</span><input name="address" value={form.address} onChange={change} required /></label><label className="field"><span>City</span><input name="city" value={form.city} onChange={change} required /></label><label className="field"><span>State</span><input name="state" value={form.state} onChange={change} required /></label><label className="field"><span>Pincode</span><input name="pincode" value={form.pincode} onChange={change} required pattern="[0-9]{5,6}" /></label></div></div><div className="form-section payment-section"><div className="form-section-title"><span>02</span><div><h3>Payment</h3><p>Simple, secure, and straightforward.</p></div></div><div className="payment-option selected"><span className="radio"><Check size={13} /></span><div><strong>Cash on delivery</strong><span>Pay when your order arrives.</span></div></div></div>{error && <Alert>{error}</Alert>}<button className="button button-dark" disabled={busy}>{busy ? "Placing order..." : <>Place order <ArrowRight size={17} /></>}</button><p className="secure-note"><LockKeyhole size={14} /> Your information is protected and never shared.</p></form><aside className="summary-card checkout-summary"><div className="kicker dark">Your order</div>{items.map((item) => <div className="mini-item" key={item.product}><img src={item.image} alt="" /><div><strong>{item.name}</strong><span>Qty {item.quantity}</span></div><strong>{money(item.price * item.quantity)}</strong></div>)}<div className="summary-total"><span>Total</span><strong>{money(subtotal + (subtotal >= 5000 ? 0 : 199))}</strong></div><span className="delivery-caption">{subtotal >= 5000 ? "Free delivery included" : "Includes ₹199 delivery"}</span></aside></div></div>;
+}
